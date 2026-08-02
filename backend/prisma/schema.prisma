@@ -1,0 +1,69 @@
+// Tech-Flow Prisma Schema
+// Simple, interview-ready data model: User -> Board -> List -> Card
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boards Board[]
+
+  @@map("users")
+}
+
+model Board {
+  id        String   @id @default(uuid())
+  title     String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lists List[]
+
+  @@index([ownerId])
+  @@map("boards")
+}
+
+model List {
+  id        String   @id @default(uuid())
+  title     String
+  position  Int // used to order lists left -> right on a board
+  boardId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  board Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards Card[]
+
+  @@index([boardId])
+  @@map("lists")
+}
+
+model Card {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  position    Int // used to order cards top -> bottom within a list
+  priority    String?  // "Low" | "Medium" | "High" — AI suggested or manually set
+  listId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId])
+  @@map("cards")
+}
